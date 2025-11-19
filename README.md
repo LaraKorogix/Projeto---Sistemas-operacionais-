@@ -69,6 +69,17 @@ Neste projeto, a empresa fictícia **BSB Compute** utiliza um **orquestrador cen
 > 📝 Etapa atual: definição da arquitetura, linguagem e estrutura inicial do código  
 > 🚧 Implementação do orquestrador e servidores: _em desenvolvimento_
 
+## 🗂 Planejamento e Organização
+
+O planejamento das tarefas do projeto é feito em um quadro no Trello, com colunas como:
+
+- 📌 Backlog
+- 🛠️ Em andamento
+- ✅ Concluído
+
+Link do quadro (somente para o grupo e professor):  
+[Quadro do projeto no Trello]([https://trello.com/...](https://trello.com/invite/b/691c57cb56aed87baae550a9/ATTI70f394186d39d56cf86679bdfd1f987f346349F7/projeto-pratico-bsb-compute-orquestracao-de-tarefas))
+
 ---
 
 > ℹ️ Este projeto é exclusivamente acadêmico e faz parte da avaliação da disciplina de **Sistemas Operacionais – Centro Universitário de Brasília (UniCEUB)**.
