@@ -1,0 +1,17 @@
+{
+  "servidores": [
+    { "id": 1, "capacidade": 3, "status": "ativo", "velocidade": 1.0 },
+    { "id": 2, "capacidade": 2, "status": "ativo", "velocidade": 1.2 },
+    { "id": 3, "capacidade": 1, "status": "ativo", "velocidade": 0.8 }
+  ],
+  "tipos_requisicoes": [
+    { "id": 1, "tipo": "visao_computacional", "peso": 3, "tempo_exec": 5 },
+    { "id": 2, "tipo": "nlp", "peso": 1, "tempo_exec": 2 },
+    { "id": 3, "tipo": "voz", "peso": 2, "tempo_exec": 3 }
+  ],
+  "config": {
+    "intervalo_chegada_min": 0.5,
+    "intervalo_chegada_max": 2.0,
+    "politica": "round_robin"   
+  }
+}
