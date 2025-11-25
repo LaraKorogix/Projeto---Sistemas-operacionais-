@@ -171,9 +171,14 @@ Essas métricas permitem comparar quantitativamente as três políticas de escal
 ## Estrutura do projeto
 ```text
 Projeto---Sistemas-operacionais-/
-  main.py        # código-fonte principal: orquestrador, gerador e workers
-  config.json    # arquivo de configuração da simulação
-  README.md      # documentação do projeto
+  ├── .gitignore
+  ├── .python-version
+  ├── config.json
+  ├── main.py
+  ├── pyproject.toml
+  ├── README.md
+  └── uv.lock
+
 ```
 
 - main.py contém a implementação dos processos, IPC, escalonamento e métricas.
@@ -181,6 +186,13 @@ Projeto---Sistemas-operacionais-/
 - config.json define servidores, tipos de requisição e parâmetros da simulação.
 
 - README.md explica o funcionamento do sistema e como executar.
+  
+- uv.lock → arquivo gerado automaticamente para controlar versões e dependências instaladas no ambiente (similar ao Poetry/Pipenv).
+  
+- .gitignore → impede que arquivos indesejados ou sensíveis sejam enviados ao repositório.
+  
+- .python-version → indica a versão do Python utilizada no desenvolvimento, garantindo reprodutibilidade do ambiente.
+
 
 ## Como executar a simulação
 
