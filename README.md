@@ -1,74 +1,67 @@
-# BSB Compute – Orquestração de Tarefas
+# BSB Compute – Orquestração de Tarefas com Políticas de Escalonamento
 
-Este repositório contém o projeto prático da disciplina **Sistemas Operacionais (2025.2)**, orientado pelo professor **Michel Junio Ferreira Rosa**.  
-O objetivo é simular um sistema de **orquestração de tarefas de IA em um cluster de servidores**, aplicando conceitos de **processos concorrentes, escalonamento e comunicação entre processos (IPC)**.
+Projeto prático da disciplina de Sistemas Operacionais, simulando a orquestração de requisições de IA em um cluster de servidores de inferência.
 
-## 🎯 Objetivo Geral
-
-Implementar um **orquestrador de requisições de IA** que distribui tarefas entre vários servidores de forma **justa, eficiente e escalonável**, aproximando o funcionamento de um escalonador real de sistemas operacionais. :contentReference[oaicite:0]{index=0}
-
-## 🧠 Contexto
-
-Com o aumento do uso de **modelos de Inteligência Artificial** (como visão computacional, NLP, reconhecimento de voz etc.), provedores de nuvem precisam lidar com milhares de requisições simultâneas, cada uma com:
-
-- Diferente **prioridade** (alta, média, baixa);
-- Diferente **tempo de execução estimado**;
-- Diferentes **capacidades de processamento** em cada servidor.
-
-Neste projeto, a empresa fictícia **BSB Compute** utiliza um **orquestrador central (master)** e vários **servidores de inferência (workers)** para:
-
-- Receber requisições de IA;
-- Organizar uma **fila de tarefas**;
-- Distribuir as requisições de acordo com a **política de escalonamento** escolhida;
-- Coletar métricas de desempenho do sistema.
-
-## ⚙️ Funcionalidades previstas
-
-- Criação de um **processo principal (orquestrador)**;
-- Criação de **subprocessos/serviços (servidores de inferência)**;
-- Fila de requisições com:
-  - Prioridade;
-  - Tempo estimado de execução;
-  - Tipo de tarefa (ex.: visão computacional, NLP, voz);
-- Suporte a múltiplas **políticas de escalonamento**:
-  - Round Robin (RR);
-  - Shortest Job First (SJF);
-  - Por prioridade;
-- Uso de **IPC** (pipes, sockets ou filas de mensagens) para comunicação entre orquestrador e servidores;
-- Geração de **logs em tempo real** com eventos da simulação;
-- Cálculo de métricas como:
-  - Tempo médio de resposta;
-  - Utilização média de CPU;
-  - Throughput (tarefas/segundo).
-
-## 🏗️ Arquitetura (visão geral)
-
-- **Orquestrador Central (Master)**  
-  - Recebe as requisições;
-  - Mantém a fila de tarefas;
-  - Aplica a política de escalonamento;
-  - Envia tarefas aos servidores e recebe os resultados.
-
-- **Servidores de Inferência (Workers)**  
-  - Representam nós do cluster;
-  - Executam as tarefas simuladas;
-  - Avisam ao orquestrador quando terminam uma requisição, liberando capacidade.
-
-## 🧪 Tecnologias
-
-- Linguagem de programação: **C, Python ou Java** (a definir pelo grupo/conforme implementação);
-- Conceitos principais:
-  - Processos e subprocessos;
-  - Comunicação entre processos (IPC);
-  - Escalonamento de processos;
-  - Medição de desempenho em sistemas operacionais.
-
-## 📌 Status do Projeto
-
-> ✅ Repositório criado  
-> 📝 Etapa atual: definição da arquitetura, linguagem e estrutura inicial do código  
-> 🚧 Implementação do orquestrador e servidores: _em desenvolvimento_
+O objetivo é **distribuir requisições** entre vários servidores (processos) usando **diferentes políticas de escalonamento**, monitorando tempos de espera, execução e utilização aproximada da CPU.
 
 ---
 
-> ℹ️ Este projeto é exclusivamente acadêmico e faz parte da avaliação da disciplina de **Sistemas Operacionais – Centro Universitário de Brasília (UniCEUB)**.
+## 🎯 Objetivos do Projeto
+
+- Simular um **orquestrador central (master)** que distribui requisições de IA para servidores de inferência.
+- Utilizar **IPC (comunicação entre processos)** via `multiprocessing.Queue`.
+- Implementar e testar **três políticas de escalonamento**:
+  - Round Robin (RR)
+  - Shortest Job First (SJF)
+  - Prioridade
+- Medir **desempenho do cluster**:
+  - tempo médio e máximo de espera,
+  - tempo médio de execução,
+  - tempo médio de resposta,
+  - throughput,
+  - utilização aproximada da CPU por servidor.
+- Simular **chegada em tempo real** de novas requisições, com intervalo aleatório.
+
+---
+
+## 🧱 Arquitetura do Sistema
+
+O sistema é dividido em três tipos principais de processos:
+
+### 1. Orquestrador (Processo B)
+
+- Lê as requisições geradas em tempo real.
+- Mantém uma **fila de tarefas prontas**.
+- Aplica a **política de escalonamento** configurada (`round_robin`, `sjf` ou `prioridade`).
+- Distribui as tarefas entre os servidores, respeitando a **capacidade** de cada um.
+- Coleta os resultados e atualiza as métricas de desempenho.
+
+### 2. Gerador de Requisições (Processo A)
+
+- Gera requisições de forma contínua e aleatória ao longo da simulação.
+- Usa os **tipos de requisição** definidos no JSON (`tipos_requisicoes`).
+- Define:
+  - tipo da requisição,
+  - tempo estimado de execução (`tempo_exec`),
+  - prioridade (mapeada a partir do `peso`).
+- Envia essas requisições para o orquestrador via uma `Queue`.
+
+### 3. Servidores de Inferência (Workers)
+
+- Cada servidor é um **processo separado**.
+- Cada servidor possui:
+  - `id`,
+  - `capacidade` (quantas tarefas suporta simultaneamente),
+  - `status` (`ativo` ou `inativo`),
+  - `velocidade` (fator para extensões futuras).
+- Lê sua própria fila de tarefas, simula o processamento com `time.sleep()` e devolve um `Result` ao orquestrador.
+
+---
+
+## 📂 Estrutura de Arquivos
+
+```text
+Projeto---Sistemas-operacionais-/
+├── main.py        # implementação do orquestrador, gerador e workers
+├── config.json    # configurações de servidores, tipos de requisições e política
+└── README.md      # este arquivo
