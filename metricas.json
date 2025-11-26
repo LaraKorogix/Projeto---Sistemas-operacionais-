@@ -1,0 +1,16 @@
+{
+  "politica": "round_robin",
+  "tarefas_processadas": 11,
+  "tempo_total_simulacao": 16.66,
+  "tempo_medio_espera": 0.04,
+  "tempo_maximo_espera": 0.08,
+  "tempo_medio_execucao": 1.55,
+  "tempo_medio_resposta": 1.59,
+  "throughput": 0.66,
+  "utilizacao_media_cpu": 34.0,
+  "utilizacao_por_servidor": {
+    "1": 36.0,
+    "2": 36.0,
+    "3": 30.0
+  }
+}
