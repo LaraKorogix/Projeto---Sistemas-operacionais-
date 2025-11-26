@@ -4,7 +4,7 @@ import random
 import queue
 import json
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple
 
 
 def format_tempo_relativo(inicio: float) -> str:
@@ -208,7 +208,7 @@ def migrar_tarefas_dinamicas(task_queues: Dict[int, multiprocessing.Queue],
                              cargas_servidor: Dict[int, int],
                              servidores_ativos: List[Servidor],
                              inicio_simulacao: float,
-                             cargas_lock: Any) -> Tuple[int, Dict[int, int]]: 
+                             cargas_lock: multiprocessing.Lock) -> Dict[int, int]:
     """
     Migra tarefas de servidores sobrecarregados para ociosos.
     
@@ -232,10 +232,10 @@ def migrar_tarefas_dinamicas(task_queues: Dict[int, multiprocessing.Queue],
         }
     
     if not cargas_relativas or len(cargas_relativas) < 2:
-        return cargas_servidor # type: ignore
+        return cargas_servidor
     
-    sid_max = max(cargas_relativas, key=lambda x: cargas_relativas[x])
-    sid_min = min(cargas_relativas, key=lambda x: cargas_relativas[x])
+    sid_max = max(cargas_relativas, key=cargas_relativas.get)
+    sid_min = min(cargas_relativas, key=cargas_relativas.get)
     
     diferenca = cargas_relativas[sid_max] - cargas_relativas[sid_min]
     
@@ -258,7 +258,7 @@ def migrar_tarefas_dinamicas(task_queues: Dict[int, multiprocessing.Queue],
         except queue.Empty:
             pass
     
-    return cargas_servidor # type: ignore
+    return cargas_servidor
 
 
 def despachar_tarefas(fila_pronta: List[Task],
@@ -268,7 +268,7 @@ def despachar_tarefas(fila_pronta: List[Task],
                       cargas_servidor: Dict[int, int],
                       indice_rr: int,
                       inicio_simulacao: float,
-                      cargas_lock: Any) -> Tuple[int, Dict[int, int]]:
+                      cargas_lock: multiprocessing.Lock) -> Tuple[int, Dict[int, int]]:
     """
     Distribui tarefas para servidores conforme política de escalonamento.
     
@@ -450,7 +450,7 @@ def orquestrador(servidores: List[Servidor],
         (time.time() - inicio_simulacao) < tempo_simulacao
         or gerador_ativo
         or fila_pronta
-        or any(cargas_servidor.values()) # type: ignore
+        or any(cargas_servidor.values())
     ):
         try:
             while True:
@@ -488,7 +488,7 @@ def orquestrador(servidores: List[Servidor],
                     
                     with cargas_lock:
                         if cargas_servidor[resultado.worker_id] > 0:
-                            cargas_servidor[resultado.worker_id] -= 1 # type: ignore
+                            cargas_servidor[resultado.worker_id] -= 1
 
                 ts = format_tempo_relativo(inicio_simulacao)
                 print(
@@ -503,7 +503,7 @@ def orquestrador(servidores: List[Servidor],
             politica=politica,
             task_queues=task_queues,
             servidores_ativos=servidores_ativos,
-            cargas_servidor=cargas_servidor, # type: ignore
+            cargas_servidor=cargas_servidor,
             indice_rr=indice_rr,
             inicio_simulacao=inicio_simulacao,
             cargas_lock=cargas_lock,
