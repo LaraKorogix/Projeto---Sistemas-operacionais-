@@ -1,16 +1,46 @@
 {
   "servidores": [
-    {"id": 1, "capacidade": 3, "status": "ativo", "velocidade": 1.0},
-    {"id": 2, "capacidade": 2, "status": "ativo", "velocidade": 1.2},
-    {"id": 3, "capacidade": 4, "status": "ativo", "velocidade": 0.8}
+    {
+      "id": 1,
+      "capacidade": 3,
+      "status": "ativo",
+      "velocidade": 1.0
+    },
+    {
+      "id": 2,
+      "capacidade": 2,
+      "status": "ativo",
+      "velocidade": 1.2
+    },
+    {
+      "id": 3,
+      "capacidade": 4,
+      "status": "ativo",
+      "velocidade": 0.8
+    }
   ],
   "tipos_requisicoes": [
-    {"id": 1, "tipo": "LLM", "peso": 1, "tempo_exec": 3},
-    {"id": 2, "tipo": "Visao", "peso": 2, "tempo_exec": 2},
-    {"id": 3, "tipo": "Audio", "peso": 3, "tempo_exec": 1}
+    {
+      "id": 1,
+      "tipo": "LLM",
+      "peso": 1,
+      "tempo_exec": 3
+    },
+    {
+      "id": 2,
+      "tipo": "Visao",
+      "peso": 2,
+      "tempo_exec": 2
+    },
+    {
+      "id": 3,
+      "tipo": "Audio",
+      "peso": 3,
+      "tempo_exec": 1
+    }
   ],
   "config": {
-    "politica": "round_robin",
+    "politica": "prioridade",
     "tempo_simulacao": 15,
     "intervalo_chegada_min": 0.5,
     "intervalo_chegada_max": 2.0

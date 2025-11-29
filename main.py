@@ -3,41 +3,87 @@ import time
 import random
 import queue
 import json
+import os
+import sys
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
 
 
-def format_tempo_relativo(inicio: float) -> str:
+
+class MenuTerminal:
     """
-    Formata tempo decorrido desde início da simulação.
-    
-    Args:
-        inicio: Timestamp de início da simulação
+    Classe utilitária para criar menus interativos no terminal
+    que funcionam tanto em Windows quanto em Unix (Linux/Mac).
+    """
+    def __init__(self):
+        self.is_windows = os.name == 'nt'
+
+    def _get_key(self):
+        """Lê uma tecla pressionada sem esperar pelo Enter."""
+        if self.is_windows:
+            import msvcrt
+            key = msvcrt.getch()
+            if key == b'\xe0':  
+                key = msvcrt.getch()
+                return {b'H': 'up', b'P': 'down'}.get(key, '')
+            return {b'\r': 'enter'}.get(key, '')
+        else:
+            import tty, termios
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+                if ch == '\x1b':  
+                    sys.stdin.read(1) 
+                    ch = sys.stdin.read(1)
+                    return {'A': 'up', 'B': 'down'}.get(ch, '')
+                return {'\n': 'enter', '\r': 'enter'}.get(ch, '')
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    def selecionar(self, titulo: str, opcoes: List[str]) -> int:
+        """Exibe o menu e retorna o índice da opção escolhida."""
+        idx = 0
+        print(f"\n{titulo}")
         
-    Returns:
-        String no formato mm:ss
-    """
+        print("\033[?25l", end="")
+        
+        try:
+            while True:
+          
+                for i, opcao in enumerate(opcoes):
+                    prefixo = "  > " if i == idx else "    "
+                    cor = "\033[92m" if i == idx else "\033[0m" 
+                    print(f"\r{cor}{prefixo}{opcao}\033[0m")
+                
+                print(f"\033[{len(opcoes)}A", end="")
+
+                acao = self._get_key()
+                if acao == 'up' and idx > 0:
+                    idx -= 1
+                elif acao == 'down' and idx < len(opcoes) - 1:
+                    idx += 1
+                elif acao == 'enter':
+                    print(f"\033[{len(opcoes)}B", end="")
+                    return idx
+        finally:
+            print("\033[?25h", end="")
+
+
+
+def format_tempo_relativo(inicio: float) -> str:
     delta = time.time() - inicio
     m, s = divmod(int(delta), 60)
     return f"{m:02d}:{s:02d}"
 
 
 def prioridade_str(p: int) -> str:
-    """
-    Converte código numérico para descrição textual de prioridade.
-    
-    Args:
-        p: Código de prioridade (1=Alta, 2=Média, 3=Baixa)
-        
-    Returns:
-        String descritiva da prioridade
-    """
     return {1: "Alta", 2: "Média", 3: "Baixa"}.get(p, f"{p}")
 
 
 @dataclass
 class Servidor:
-    """Representa um servidor de processamento no cluster."""
     id: int
     capacidade: int
     status: str
@@ -46,7 +92,6 @@ class Servidor:
 
 @dataclass
 class TipoRequisicao:
-    """Define características de um tipo de requisição."""
     id: int
     tipo: str
     peso: int
@@ -55,7 +100,6 @@ class TipoRequisicao:
 
 @dataclass
 class Task:
-    """Representa uma tarefa de processamento."""
     id: int
     nome: str
     custo_estimado: int
@@ -66,7 +110,6 @@ class Task:
 
 @dataclass
 class Result:
-    """Armazena resultado de processamento de tarefa."""
     task_id: int
     worker_id: int
     tempo_espera: float
@@ -74,15 +117,6 @@ class Result:
 
 
 def carregar_config(caminho_arquivo: str) -> Tuple[List[Servidor], List[TipoRequisicao], Dict]:
-    """
-    Carrega configuração do sistema a partir de arquivo JSON.
-    
-    Args:
-        caminho_arquivo: Caminho para arquivo config.json
-        
-    Returns:
-        Tupla (servidores, tipos_requisicoes, config_extra)
-    """
     with open(caminho_arquivo, "r", encoding="utf-8") as f:
         dados = json.load(f)
 
@@ -117,17 +151,6 @@ def gerador_requisicoes(tipos_requisicoes: List[TipoRequisicao],
                         tempo_simulacao: int, 
                         inicio_global: float,
                         num_workers: int):
-    """
-    Processo gerador que cria requisições em tempo real.
-    
-    Args:
-        tipos_requisicoes: Lista de tipos de requisições disponíveis
-        config_extra: Configurações adicionais do sistema
-        fila_entrada: Queue para enviar requisições ao orquestrador
-        tempo_simulacao: Duração da simulação em segundos
-        inicio_global: Timestamp de início para sincronização
-        num_workers: Número de workers ativos (para poison pills)
-    """
     intervalo_min = config_extra.get("intervalo_chegada_min", 0.5)
     intervalo_max = config_extra.get("intervalo_chegada_max", 2.0)
 
@@ -172,15 +195,6 @@ def worker_process(id_worker: int,
                    task_queue: multiprocessing.Queue,
                    result_queue: multiprocessing.Queue, 
                    inicio_global: float):
-    """
-    Processo worker que executa tarefas de inferência.
-    
-    Args:
-        id_worker: Identificador único do worker
-        task_queue: Queue de entrada para receber tarefas
-        result_queue: Queue de saída para enviar resultados
-        inicio_global: Timestamp de início para sincronização de logs
-    """
     print(f"[{format_tempo_relativo(inicio_global)}] [SRV-{id_worker}] Iniciado e aguardando tarefas...")
 
     while True:
@@ -208,20 +222,7 @@ def migrar_tarefas_dinamicas(task_queues: Dict[int, multiprocessing.Queue],
                              cargas_servidor: Dict[int, int],
                              servidores_ativos: List[Servidor],
                              inicio_simulacao: float,
-                             cargas_lock: multiprocessing.Lock) -> Dict[int, int]:
-    """
-    Migra tarefas de servidores sobrecarregados para ociosos.
-    
-    Args:
-        task_queues: Dicionário {servidor_id: Queue de tarefas}
-        cargas_servidor: Dicionário {servidor_id: carga atual}
-        servidores_ativos: Lista de servidores disponíveis
-        inicio_simulacao: Timestamp de início para logs
-        cargas_lock: Lock para sincronização de cargas_servidor
-        
-    Returns:
-        Dicionário atualizado de cargas por servidor
-    """
+                             cargas_lock: multiprocessing.Lock) -> Dict[int, int]: # type: ignore
     capacidades = {s.id: s.capacidade for s in servidores_ativos}
     
     with cargas_lock:
@@ -234,8 +235,8 @@ def migrar_tarefas_dinamicas(task_queues: Dict[int, multiprocessing.Queue],
     if not cargas_relativas or len(cargas_relativas) < 2:
         return cargas_servidor
     
-    sid_max = max(cargas_relativas, key=cargas_relativas.get)
-    sid_min = min(cargas_relativas, key=cargas_relativas.get)
+    sid_max = max(cargas_relativas, key=cargas_relativas.get)# type: ignore
+    sid_min = min(cargas_relativas, key=cargas_relativas.get)# type: ignore
     
     diferenca = cargas_relativas[sid_max] - cargas_relativas[sid_min]
     
@@ -268,23 +269,7 @@ def despachar_tarefas(fila_pronta: List[Task],
                       cargas_servidor: Dict[int, int],
                       indice_rr: int,
                       inicio_simulacao: float,
-                      cargas_lock: multiprocessing.Lock) -> Tuple[int, Dict[int, int]]:
-    """
-    Distribui tarefas para servidores conforme política de escalonamento.
-    
-    Args:
-        fila_pronta: Lista de tarefas aguardando processamento
-        politica: Nome da política ("round_robin", "sjf", "prioridade")
-        task_queues: Dicionário {servidor_id: Queue}
-        servidores_ativos: Lista de servidores disponíveis
-        cargas_servidor: Dicionário {servidor_id: carga atual}
-        indice_rr: Índice atual para Round Robin
-        inicio_simulacao: Timestamp de início para logs
-        cargas_lock: Lock para sincronização
-        
-    Returns:
-        Tupla (indice_rr atualizado, cargas_servidor atualizadas)
-    """
+                      cargas_lock: multiprocessing.Lock) -> Tuple[int, Dict[int, int]]: # type: ignore
     politica = politica.lower()
 
     while fila_pronta:
@@ -376,13 +361,6 @@ def despachar_tarefas(fila_pronta: List[Task],
 
 
 def salvar_metricas(metricas: Dict, arquivo: str = "metricas.json"):
-    """
-    Exporta métricas de desempenho para arquivo JSON.
-    
-    Args:
-        metricas: Dicionário contendo métricas calculadas
-        arquivo: Caminho do arquivo de saída
-    """
     with open(arquivo, "w", encoding="utf-8") as f:
         json.dump(metricas, f, indent=2, ensure_ascii=False)
     print(f"\nMétricas exportadas para {arquivo}")
@@ -394,17 +372,6 @@ def orquestrador(servidores: List[Servidor],
                  fila_entrada: multiprocessing.Queue,
                  tempo_simulacao: int,
                  inicio_simulacao: float):
-    """
-    Processo central de orquestração que gerencia distribuição de tarefas.
-    
-    Args:
-        servidores: Lista de servidores disponíveis
-        tipos_requisicoes: Lista de tipos de requisições
-        config_extra: Configurações adicionais
-        fila_entrada: Queue para receber requisições do gerador
-        tempo_simulacao: Duração da simulação em segundos
-        inicio_simulacao: Timestamp de início
-    """
     servidores_ativos = [s for s in servidores if s.status == "ativo"]
 
     politica = config_extra.get("politica", "round_robin").lower()
@@ -532,7 +499,7 @@ def orquestrador(servidores: List[Servidor],
     tempo_total_simulacao = time.time() - inicio_simulacao
 
     print("\n" + "-" * 60)
-    print("                 === Relatório Final ===")
+    print("                === Relatório Final ===")
     print("-" * 60)
 
     if tasks_finalizadas > 0:
@@ -585,13 +552,25 @@ def orquestrador(servidores: List[Servidor],
 
 
 def main():
-    """Ponto de entrada principal do sistema BSB Compute."""
     servidores, tipos_requisicoes, cfg = carregar_config("config.json")
-    print("Configuração carregada com sucesso!\n")
+    
+    if "--auto" in sys.argv:
+        print(f"Modo automático detectado. Usando política: {cfg.get('politica')}")
+    else:
+        menu = MenuTerminal()
+        opcoes = ["Round Robin", "SJF", "Prioridade"]
+        mapa = ["round_robin", "sjf", "prioridade"]
+        
+        try:
+            idx = menu.selecionar("BSB Compute - Modo Manual", opcoes)
+            cfg["politica"] = mapa[idx]
+            print(f"\nPolítica selecionada manualmente: {mapa[idx].upper()}")
+            time.sleep(0.5)
+        except KeyboardInterrupt:
+            return
 
     TEMPO_SIMULACAO = cfg.get("tempo_simulacao", 15)
     inicio_global = time.time()
-
     fila_entrada = multiprocessing.Queue()
     num_workers = len([s for s in servidores if s.status == "ativo"])
 
@@ -600,11 +579,11 @@ def main():
         args=(tipos_requisicoes, cfg, fila_entrada, TEMPO_SIMULACAO, inicio_global, num_workers),
     )
     gerador.start()
-
     orquestrador(servidores, tipos_requisicoes, cfg, fila_entrada, TEMPO_SIMULACAO, inicio_global)
-
     gerador.join()
 
 
 if __name__ == "__main__":
+    if os.name == 'nt':
+        os.system('color')
     main()
